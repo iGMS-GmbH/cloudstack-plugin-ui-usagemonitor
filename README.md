@@ -1,6 +1,6 @@
 # Cloudstack Usagemonitor
 
-Use this Apache CloudStack UI plugin to display usagerecords for the ressources your virtual machines have consumed.
+Use this Apache CloudStack UI plugin to display usagerecords for the resources your virtual machines have consumed.
 
 To install this plugin, copy the content of this project into the plugin folder of cloudstack.
 

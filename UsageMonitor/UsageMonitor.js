@@ -22,7 +22,6 @@ limitations under the License.
    var USAGE_TYPE_IP_ADDRESS   = 3;
    var USAGE_TYPE_STORAGE      = 6;
 
-
    /**
     * Plugin starts
     */
@@ -46,7 +45,7 @@ limitations under the License.
    oUsageMonitor.reportDateStart = d.toISOString().substr(0,10);
 
    oUsageMonitor.getProjectListView = function(){
-	   return {
+      return {
            id: 'listProjects_list_view',
            hideSearchBar: true,
            fields: {   // Fields are listed in the JSON file
@@ -65,32 +64,34 @@ limitations under the License.
                                 dictionary["label.running.vms"],
                                 USAGE_TYPE_RUNNING_VM,
                                 dictionary["label.instance.name"],
+                                null,
                                 dictionary["label.time"]
                              ),
                  cpuAlloc:  oUsageMonitor.tabsViewFactory('cpu_allocated',
                                 dictionary["label.cpu.allocated"],
                                 USAGE_TYPE_ALLOCATED_VM,
                                 dictionary["label.instance.name"],
+                                null,
                                 dictionary["label.time"]
                              ),
                  ipAddress: oUsageMonitor.tabsViewFactory('ip_address',
                                 dictionary["label.ipaddress"],
                                 USAGE_TYPE_IP_ADDRESS,
                                 dictionary["label.description"],
+                                null,
                                 dictionary["label.time"]
                              ),
                  Storage:   oUsageMonitor.tabsViewFactory('storage',
                                 dictionary["label.storage"],
                                 USAGE_TYPE_STORAGE,
                                 dictionary["label.description"],
+                                dictionary["label.disk.size.gb"],
                                 dictionary["label.time"]
                              ),
               }
            }
         };
     }
-
-
 
    /**
     * Refreshes the labels of the button dates picker
@@ -142,7 +143,6 @@ limitations under the License.
          }
 
          curr_p.usages[usage_key] += parseFloat(row.rawusage);
-
       }
 
       var r1 = [];
@@ -173,6 +173,7 @@ limitations under the License.
    oUsageMonitor.summarize_usages_type = function(data, usage_type) {
       var usage_type_summary = {};
       var virtual_machines_types = false;
+      var storage_types = false;
       for (i in data) {
          var row = data[i];
          if (row.usagetype != usage_type) {continue;} //Only used for dummy_json
@@ -187,6 +188,18 @@ limitations under the License.
             }
             var curr_vm = usage_type_summary[row.virtualmachineid];
             curr_vm.usage += parseFloat(row.rawusage);
+         }
+         else if (usage_type == USAGE_TYPE_STORAGE){
+            storage_types = true;
+            if(usage_type_summary[row.description] == undefined){
+               usage_type_summary[row.description] = {
+                  description: row.description,
+                  size: row.size,
+                  usage: 0
+               };
+            }
+            var curr_usage = usage_type_summary[row.description];
+            curr_usage.usage += parseFloat(row.rawusage);
          }
          else {
             if(usage_type_summary[row.description] == undefined){
@@ -204,11 +217,14 @@ limitations under the License.
       if (virtual_machines_types){
          for (var virtualmachineid in usage_type_summary) {
             var curr_vm = usage_type_summary[virtualmachineid];
-            var x = { virtualmachineid: virtualmachineid, name: curr_vm.name, usage: oUsageMonitor.format_hour(curr_vm.usage) };
+            var x = { virtualmachineid: virtualmachineid,
+                      name: curr_vm.name,
+                      usage: oUsageMonitor.format_hour(curr_vm.usage)
+            };
             r1.push(x);
          }
       }
-      else{
+      else if (storage_types){
          for (var usage in usage_type_summary) {
             var hr_usage = '';
             if (usage.search("DiskOffering")){
@@ -216,7 +232,19 @@ limitations under the License.
                hr_usage = usage.replace(/usage time .+/, "");
             }
             var curr_usage = usage_type_summary[usage];
-            var x = { description: hr_usage, usage: oUsageMonitor.format_hour(curr_usage.usage) };
+            var x = { description: hr_usage, 
+                      size: oUsageMonitor.format_gigabytes(curr_usage.size),
+                      usage: oUsageMonitor.format_hour(curr_usage.usage)
+            };
+            r1.push(x);
+         }
+      }
+      else{
+         for (var usage in usage_type_summary) {
+            var curr_usage = usage_type_summary[usage];
+            var x = { description: curr_usage.description,
+                      usage: oUsageMonitor.format_hour(curr_usage.usage)
+            };
             r1.push(x);
          }
       }
@@ -224,9 +252,12 @@ limitations under the License.
    };
 
    oUsageMonitor.format_hour = function(num) {
-	   return num.toFixed(2) + " Hrs.";
+      return num.toFixed(2) + " Hrs.";
    };
 
+   oUsageMonitor.format_gigabytes = function(num) {
+      return num / (1024 * 1024 * 1024);
+   };
    /**
     * Does the API call from the list view and summarizes all usages
     * from every project and device
@@ -281,13 +312,21 @@ limitations under the License.
    /**
     * Identifies the field name for the tab view
     */
-   oUsageMonitor.name_or_description = function(usageType, fieldName, fieldUsage){
+   oUsageMonitor.name_or_description = function(usageType, fieldName, fieldSize, fieldUsage){
       if (usageType == USAGE_TYPE_RUNNING_VM || usageType == USAGE_TYPE_ALLOCATED_VM){
          return {
             name: { label: fieldName },
             usage:{ label: fieldUsage }
          };
-      }else{
+      }
+      else if (usageType == USAGE_TYPE_STORAGE){
+         return {
+            description: { label: fieldName },
+            size: { label: fieldSize },
+            usage:{ label: fieldUsage }
+         };
+      }
+      else{
          return {
             description: { label: fieldName },
             usage:{ label: fieldUsage }
@@ -301,12 +340,12 @@ limitations under the License.
     * @param id
     * @return tabs
     */
-   oUsageMonitor.tabsViewFactory = function(id, title, usageType, fieldName, fieldUsage){
+   oUsageMonitor.tabsViewFactory = function(id, title, usageType, fieldName, fieldSize, fieldUsage){
       return {
          title: title,
          listView: {
             id: id,
-            fields: oUsageMonitor.name_or_description(usageType, fieldName, fieldUsage),
+            fields: oUsageMonitor.name_or_description(usageType, fieldName, fieldSize, fieldUsage),
             hideSearchBar: true,
             dataProvider: function(args) {
                return oUsageMonitor.bdDataProvider(args, usageType);
@@ -317,8 +356,6 @@ limitations under the License.
          }
       };
    };
-
-
 
    /**
     * Filter action for header, where the date picker is set
@@ -336,7 +373,7 @@ limitations under the License.
              title: 'Enter enddate parameter',
              desc: '',
              fields: {
-            	 dateend: {
+                dateend: {
                      label: 'End date',
                      isDatepicker: true,
                  },
@@ -367,7 +404,7 @@ limitations under the License.
              title: 'Enter Startdate parameter',
              desc: '',
              fields: {
-            	 datestart: {
+                datestart: {
                      label: 'Start date',
                      isDatepicker: true,
                  },
@@ -386,7 +423,6 @@ limitations under the License.
          }
       }
    };
-
 
    cloudStack.plugins.UsageMonitor = oUsageMonitor;
 }(cloudStack));

@@ -17,8 +17,8 @@ limitations under the License.
 */
 (function (cloudStack) {
   cloudStack.plugins.UsageMonitor.config = {
-    title: 'Usage Monitor',
-    desc: 'Usage monitor plugin for Apache Cloudstack made by BIT.Group',
+    title: dictionary['cd.project.title'],
+    desc: dictionary['cd.project.description'],
     externalLink: 'http://www.bautzen-it.de/',
     authorName: 'BIT.Group',
     authorEmail: 'info@bautzen-it.de'

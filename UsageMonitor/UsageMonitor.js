@@ -21,6 +21,26 @@ limitations under the License.
    var USAGE_TYPE_ALLOCATED_VM = 2;
    var USAGE_TYPE_IP_ADDRESS   = 3;
    var USAGE_TYPE_STORAGE      = 6;
+   var custom_dictionary_url = "plugins/UsageMonitor/dictionary_" + $.cookie('lang') + ".js";
+   var supported_languages = ['en', 'es', 'de_DE', 'zh_CN'];
+   /**
+    * Determine language settings
+    */
+   if ($.cookie('lang') == 'en'){
+      custom_dictionary_url = "plugins/UsageMonitor/dictionary.js";
+   }
+
+   var check_language_support = supported_languages.indexOf($.cookie('lang'));
+   if (check_language_support == -1){
+      alert("UsageMonitor: Language not supported. Using plugin in english instead.");
+      custom_dictionary_url = "plugins/UsageMonitor/dictionary.js";
+   }
+
+   $.ajax({
+      type: "GET",
+      url: custom_dictionary_url,
+      async: false
+   });
 
    /**
     * Plugin starts
@@ -49,11 +69,11 @@ limitations under the License.
            id: 'listProjects_list_view',
            hideSearchBar: true,
            fields: {   // Fields are listed in the JSON file
-              project:     { label: dictionary["label.project.name"] },
-              usagetype_1: { label: dictionary["label.running.vms"] },
-              usagetype_2: { label: dictionary["label.allocated"] },
-              usagetype_3: { label: dictionary["label.menu.ipaddresses"] },
-              usagetype_6: { label: dictionary["label.disk.offering"] },
+              project:     { label: dictionary["cd.label.project"] },
+              usagetype_1: { label: dictionary["cd.label.running_vms"] },
+              usagetype_2: { label: dictionary["cd.label.allocated_vms"] },
+              usagetype_3: { label: dictionary["cd.label.ip_addresses"] },
+              usagetype_6: { label: dictionary["cd.label.disk_usage"] },
            },
            dataProvider: oUsageMonitor.listProjectsDataProvider,
            detailView: {
@@ -61,32 +81,32 @@ limitations under the License.
               noCompact: true, //this one suppresses the quickview on projectlist
               tabs: {
                  cpuRun:    oUsageMonitor.tabsViewFactory('cpu_running',
-                                dictionary["label.running.vms"],
+                                dictionary["cd.label.running_vms"],
                                 USAGE_TYPE_RUNNING_VM,
-                                dictionary["label.instance.name"],
+                                dictionary["cd.label.instance_name"],
                                 null,
-                                dictionary["label.time"]
+                                dictionary["cd.label.time"]
                              ),
                  cpuAlloc:  oUsageMonitor.tabsViewFactory('cpu_allocated',
-                                dictionary["label.cpu.allocated"],
+                                dictionary["cd.label.allocated_vms"],
                                 USAGE_TYPE_ALLOCATED_VM,
-                                dictionary["label.instance.name"],
+                                dictionary["cd.label.instance_name"],
                                 null,
-                                dictionary["label.time"]
+                                dictionary["cd.label.time"]
                              ),
                  ipAddress: oUsageMonitor.tabsViewFactory('ip_address',
-                                dictionary["label.ipaddress"],
+                                dictionary["cd.label.ip_addresses"],
                                 USAGE_TYPE_IP_ADDRESS,
-                                dictionary["label.description"],
+                                dictionary["cd.label.description"],
                                 null,
-                                dictionary["label.time"]
+                                dictionary["cd.label.time"]
                              ),
                  Storage:   oUsageMonitor.tabsViewFactory('storage',
-                                dictionary["label.storage"],
+                                dictionary["cd.label.disk_usage"],
                                 USAGE_TYPE_STORAGE,
-                                dictionary["label.description"],
-                                dictionary["label.disk.size.gb"],
-                                dictionary["label.time"]
+                                dictionary["cd.label.description"],
+                                dictionary["cd.label.disk_size"],
+                                dictionary["cd.label.time"]
                              ),
               }
            }
@@ -99,8 +119,8 @@ limitations under the License.
     * @return none
     */
    oUsageMonitor.refresh_labels = function() {
-      $('.datestart span:nth-child(2)').text('From: ' + oUsageMonitor.reportDateStart);
-      $('.dateend span:nth-child(2)').text('To: '+ oUsageMonitor.reportDateEnd);
+      $('.datestart span:nth-child(2)').text(dictionary["cd.label.date.from"] + ": " + oUsageMonitor.reportDateStart);
+      $('.dateend span:nth-child(2)').text(dictionary["cd.label.date.to"] + ": " + oUsageMonitor.reportDateEnd);
    };
 
    /**
@@ -267,7 +287,7 @@ limitations under the License.
     */
    oUsageMonitor.listProjectsDataProvider = function(args) {
 
-     $.ajax({
+      $.ajax({
         url: createURL('listUsageRecords'),
         data: {
            startdate: oUsageMonitor.reportDateStart,
@@ -362,19 +382,19 @@ limitations under the License.
     */
    oUsageMonitor.filterActionHeader = {
       dateend: {
-         label: 'To: ',
+         label: dictionary["cd.label.date.to"],
          isHeader: true,
          messages: {
             notification: function(args) {
-               return "Enddate parameter set";
+               return dictionary["cd.message.enddateset"];
             }
          },
          createForm: {// Seems that datepicker only works on forms
-             title: 'Enter enddate parameter',
+             title: dictionary["cd.label.enterenddate"],
              desc: '',
              fields: {
                 dateend: {
-                     label: 'End date',
+                     label: dictionary["cd.label.date.to"],
                      isDatepicker: true,
                  },
              }
@@ -393,19 +413,19 @@ limitations under the License.
       },
 
       datestart: {
-         label: 'From: ',
+         label: dictionary["cd.label.date.from"],
          isHeader: true,
          messages: {
             notification: function(args) {
-               return "Startdate set";
+               return dictionary["cd.message.startdateset"];
             }
          },
          createForm: { //Date picker needs a form
-             title: 'Enter Startdate parameter',
+             title: dictionary["cd.label.enterstartdate"],
              desc: '',
              fields: {
                 datestart: {
-                     label: 'Start date',
+                     label: dictionary["cd.label.date.from"],
                      isDatepicker: true,
                  },
              }

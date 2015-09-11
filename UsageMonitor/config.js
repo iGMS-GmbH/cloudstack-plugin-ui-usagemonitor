@@ -17,8 +17,8 @@ limitations under the License.
 */
 (function (cloudStack) {
   cloudStack.plugins.UsageMonitor.config = {
-    title: dictionary['cd.project.title'],
-    desc: dictionary['cd.project.description'],
+    title: _l('cd.project.title'),
+    desc: _l('cd.project.description'),
     externalLink: 'http://www.bautzen-it.de/',
     authorName: 'BIT.Group',
     authorEmail: 'info@bautzen-it.de'
